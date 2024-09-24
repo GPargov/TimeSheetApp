@@ -54,7 +54,7 @@ const Navbar = () => {
           </>
         ) : (
           <>
-            <span style={{ color: 'white', marginRight: '15px' }}>
+            <span style={{ color: 'white', marginRight: '15px', fontWeight: 800, textAlign: 'center' }}>
               Hello, {user.name || 'User'}
             </span>
             <NavLink to="/timesheet-table">Timesheet Table</NavLink>
