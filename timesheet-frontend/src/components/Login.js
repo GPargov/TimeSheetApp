@@ -1,88 +1,111 @@
-import React, { useState } from 'react';
+// src/components/Login.js
+import React, { useContext } from 'react';
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Box,
+} from '@mui/material';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import styled from 'styled-components';
+import { AuthContext } from './AuthContext';
+import { useSnackbar } from 'notistack';
+import { useNavigate, Link } from 'react-router-dom';
 
-const LoginContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #f5f5f5;
-`;
-
-const LoginForm = styled.form`
-  display: flex;
-  flex-direction: column;
-  background-color: #fff;
-  padding: 40px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 300px;
-`;
-
-const Input = styled.input`
-  margin-bottom: 15px;
-  padding: 12px;
-  font-size: 14px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-  }
-`;
-
-const Button = styled.button`
-  background-color: #007bff;
-  color: white;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  &:hover {
-    background-color: #0056b3;
-  }
-`;
+const API_URL = 'http://localhost:5000'; // Ensure this matches your backend server
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const { login } = useContext(AuthContext);
+  const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:5000/auth/login', { email, password });
-      localStorage.setItem('token', res.data.token);
-      navigate('/timesheet-table');
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .email('Please enter a valid email')
+        .required('Email is required'),
+      password: Yup.string().required('Password is required'),
+    }),
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        const res = await axios.post(`${API_URL}/auth/login`, values, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log('Login Response:', res.data); // Debugging line
+
+        // Check if res.data.token exists and is a string
+        if (res.data && typeof res.data.token === 'string') {
+          login(res.data.token); // Store token and set user in context
+          enqueueSnackbar('Logged in successfully!', { variant: 'success' });
+          resetForm();
+          navigate('/timesheet-table'); // Redirect to timesheet table after login
+        } else {
+          throw new Error('Invalid token received from server');
+        }
+      } catch (err) {
+        console.error('Login error:', err.response || err.message);
+        enqueueSnackbar(
+          err.response?.data?.errors?.[0]?.msg || err.message || 'Failed to login',
+          { variant: 'error' }
+        );
+      }
+    },
+  });
 
   return (
-    <LoginContainer>
-      <LoginForm onSubmit={handleSubmit}>
-        <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>Login</h2>
-        <Input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-        />
-        <Input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-        />
-        <Button type="submit">Login</Button>
-      </LoginForm>
-    </LoginContainer>
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Paper elevation={3} sx={{ padding: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Login
+        </Typography>
+        <Box component="form" onSubmit={formik.handleSubmit}>
+          <TextField
+            label="Email"
+            name="email"
+            type="email"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            {...formik.getFieldProps('email')}
+            error={formik.touched.email && Boolean(formik.errors.email)}
+            helperText={formik.touched.email && formik.errors.email}
+          />
+          <TextField
+            label="Password"
+            name="password"
+            type="password"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            {...formik.getFieldProps('password')}
+            error={formik.touched.password && Boolean(formik.errors.password)}
+            helperText={formik.touched.password && formik.errors.password}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            Login
+          </Button>
+        </Box>
+        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+          Don't have an account? <Link to="/register">Register here</Link>
+        </Typography>
+      </Paper>
+    </Container>
   );
 };
 

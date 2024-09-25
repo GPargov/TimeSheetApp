@@ -1,45 +1,52 @@
+// routes/timesheet.js
 const express = require('express');
-const Timesheet = require('../models/Timesheet');
-const auth = require('../middleware/auth'); // Import auth middleware
 const router = express.Router();
+const auth = require('../middleware/authMiddleware'); // Ensure this path is correct
+const Timesheet = require('../models/Timesheet'); // Ensure this path is correct
 
-// Create a timesheet
+/**
+ * @route   POST /timesheet/create
+ * @desc    Create a new timesheet
+ * @access  Private
+ */
 router.post('/create', auth, async (req, res) => {
-  const { date, startTime, endTime, breakTime } = req.body;
   try {
-    const timesheet = new Timesheet({
+    const { date, startTime, endTime, breakTime } = req.body;
+
+    // Basic validation
+    if (!date || !startTime || !endTime || breakTime === undefined) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    const newTimesheet = new Timesheet({
+      userId: req.user.id, // Extracted from auth middleware
       date,
       startTime,
       endTime,
       breakTime,
-      userId: req.user.userId
     });
-    await timesheet.save();
-    res.json(timesheet);
+
+    const savedTimesheet = await newTimesheet.save();
+    res.json(savedTimesheet);
   } catch (err) {
-    res.status(500).send('Server error');
+    console.error('Error creating timesheet:', err.message);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get timesheets for a user
-// Get timesheets for a specific user or all timesheets if admin
+/**
+ * @route   GET /timesheet
+ * @desc    Get all timesheets for the authenticated user
+ * @access  Private
+ */
 router.get('/', auth, async (req, res) => {
   try {
-    let timesheets;
-    
-    // If the user is an admin, fetch all timesheets and include user details (name)
-    if (req.user.role === 'admin') {
-      timesheets = await Timesheet.find().populate('userId', 'name'); // Populate user name
-    } else {
-      // If the user is not an admin, fetch only their timesheets
-      timesheets = await Timesheet.find({ userId: req.user.userId });
-    }
-
+    const timesheets = await Timesheet.find({ userId: req.user.id }).sort({ date: -1 });
     res.json(timesheets);
   } catch (err) {
-    res.status(500).send('Server error');
+    console.error('Error fetching timesheets:', err.message);
+    res.status(500).json({ message: 'Server error' });
   }
 });
-
 
 module.exports = router;

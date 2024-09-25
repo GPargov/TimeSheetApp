@@ -1,34 +1,45 @@
+// routes/admin.js
 const express = require('express');
-const Timesheet = require('../models/Timesheet');
-const jwt = require('jsonwebtoken');
 const router = express.Router();
+const auth = require('../middleware/authMiddleware');
+const Timesheet = require('../models/Timesheet');
+const User = require('../models/User');
 
-// Middleware to verify JWT and admin role
-const auth = (req, res, next) => {
-  const token = req.header('Authorization');
-  if (!token) return res.status(401).json({ message: 'No token' });
-
-  try {
-    const decoded = jwt.verify(token, 'secret');
-    req.user = decoded;
-
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-
-    next();
-  } catch (err) {
-    res.status(401).json({ message: 'Invalid token' });
+// Middleware to check admin role
+const adminAuth = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res
+      .status(403)
+      .json({ message: 'Access denied: Admins only' });
   }
+  next();
 };
 
-// Admin endpoint to get all timesheets
-router.get('/timesheets', auth, async (req, res) => {
+// @route   GET /admin/employees
+// @desc    Get all employees
+// @access  Private (Admin)
+router.get('/employees', auth, adminAuth, async (req, res) => {
   try {
-    const timesheets = await Timesheet.find().populate('userId', 'name');
+    const employees = await User.find({ role: 'user' }).select('-password');
+    res.json(employees);
+  } catch (err) {
+    console.error('Error fetching employees:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET /admin/timesheets/:userId
+// @desc    Get timesheets for a specific user
+// @access  Private (Admin)
+router.get('/timesheets/:userId', auth, adminAuth, async (req, res) => {
+  try {
+    const timesheets = await Timesheet.find({ userId: req.params.userId }).sort({
+      date: -1,
+    });
     res.json(timesheets);
   } catch (err) {
-    res.status(500).send('Server error');
+    console.error('Error fetching timesheets:', err.message);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

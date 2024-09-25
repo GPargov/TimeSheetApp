@@ -1,99 +1,125 @@
-import React from 'react';
-import styled from 'styled-components';
-import { Link, useNavigate } from 'react-router-dom';
-import {jwtDecode} from 'jwt-decode';
-
-const SidebarContainer = styled.div`
-    width: 180px;
-    height: 100vh;
-    background-color: #0056b3;
-    position: fixed;
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: column;
-    padding-top: 20px;
-`;
-
-const Logo = styled.h1`
-    color: white;
-    font-size: 24px;
-    font-weight: bold;
-    text-align: center;
-    margin-bottom: 30px;
-`;
-
-const SidebarLink = styled(Link)`
-    color: white;
-    padding: 15px 20px;
-    text-decoration: none;
-    font-size: 18px;
-    display: block;
-    transition: background-color 0.3s ease;
-    &:hover {
-        background-color: #003f7f;
-    }
-`;
-
-const LogoutButton = styled.button`
-    background: none;
-    color: white;
-    border: none;
-    font-size: 18px;
-    padding: 15px 20px;
-    cursor: pointer;
-    text-align: left;
-    width: 100%;
-    margin-top: auto;
-    &:hover {
-        background-color: #003f7f;
-    }
-`;
+// src/components/Sidebar.js
+import React, { useContext } from 'react';
+import {
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Typography,
+  IconButton,
+} from '@mui/material';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { AuthContext } from './AuthContext';
+import {
+  Dashboard as DashboardIcon,
+  AccessTime as AccessTimeIcon,
+  ExitToApp as ExitToAppIcon,
+  EventNote as EventNoteIcon,
+  Person as PersonIcon,
+  LockOpen as LockOpenIcon,
+  HowToReg as HowToRegIcon,
+  Brightness4,
+  Brightness7,
+} from '@mui/icons-material';
+import { ColorModeContext } from '../ThemeContext';
 
 const Sidebar = () => {
-    const navigate = useNavigate();
-    const token = localStorage.getItem('token');
-    let user = null;
+  const { user, logout } = useContext(AuthContext);
+  const { mode, toggleColorMode } = useContext(ColorModeContext);
+  const navigate = useNavigate();
 
-    if (token) {
-        try {
-            user = jwtDecode(token);
-        } catch (err) {
-            user = null;
-        }
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
-    };
-
-    return (
-        <SidebarContainer>
-            <Logo>Mylantech</Logo>
-
-            {!user ? (
-                <>
-                    <SidebarLink to="/login">Login</SidebarLink>
-                    <SidebarLink to="/register">Register</SidebarLink>
-                </>
-            ) : (
-                <>
-                    
-                    <SidebarLink to="/timesheet-table">
-                        Timesheet Table
-                    </SidebarLink>
-                    <SidebarLink to="/timesheet">Submit Timesheet</SidebarLink>
-                    {user.role === 'admin' && (
-                        <SidebarLink to="/admin-dashboard">
-                            Admin Dashboard
-                        </SidebarLink>
-                    )}
-                    <LogoutButton onClick={handleLogout}>Logout</LogoutButton>
-                </>
-            )}
-        </SidebarContainer>
-    );
+  return (
+    <Box sx={{ width: 250 }}>
+      <Drawer variant="permanent" sx={{ width: 250 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            p: 2,
+          }}
+        >
+          <Typography variant="h5">Mylantech</Typography>
+          <IconButton onClick={toggleColorMode} color="inherit">
+            {mode === 'light' ? <Brightness4 /> : <Brightness7 />}
+          </IconButton>
+        </Box>
+        <List>
+          {!user ? (
+            <>
+              <ListItem disablePadding>
+                <ListItemButton component={RouterLink} to="/login">
+                  <ListItemIcon>
+                    <LockOpenIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Login" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={RouterLink} to="/register">
+                  <ListItemIcon>
+                    <HowToRegIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Register" />
+                </ListItemButton>
+              </ListItem>
+            </>
+          ) : (
+            <>
+              <ListItem disablePadding>
+                <ListItemButton component={RouterLink} to="/timesheet-table">
+                  <ListItemIcon>
+                    <DashboardIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Timesheets" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={RouterLink} to="/timesheet">
+                  <ListItemIcon>
+                    <AccessTimeIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Submit Timesheet" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={RouterLink} to="/leave-application">
+                  <ListItemIcon>
+                    <EventNoteIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Apply for Leave" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={RouterLink} to="/profile">
+                  <ListItemIcon>
+                    <PersonIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Profile" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton onClick={handleLogout}>
+                  <ListItemIcon>
+                    <ExitToAppIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Logout" />
+                </ListItemButton>
+              </ListItem>
+            </>
+          )}
+        </List>
+      </Drawer>
+    </Box>
+  );
 };
 
 export default Sidebar;

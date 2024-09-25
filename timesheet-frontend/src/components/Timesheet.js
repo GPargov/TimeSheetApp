@@ -1,105 +1,138 @@
-import React, { useState } from 'react';
-import styled from 'styled-components';
+// src/components/Timesheet.js
+import React, { useContext, useEffect } from 'react';
+import {
+  Container,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  Box,
+} from '@mui/material';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import axios from 'axios';
+import { AuthContext } from './AuthContext';
+import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
 
-const FormContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: calc(100vh - 40px); /* Adjust based on sidebar */
-  background-color: #f8f9fa;
-`;
-
-const Form = styled.form`
-  background-color: white;
-  padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 400px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 20px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 16px;
-  &:focus {
-    outline: none;
-    border-color: #0056b3;
-  }
-`;
-
-const Button = styled.button`
-  width: 100%;
-  background-color: #28a745;
-  color: white;
-  padding: 12px;
-  font-size: 18px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  &:hover {
-    background-color: #218838;
-  }
-`;
+const API_URL = 'http://localhost:5000';
 
 const Timesheet = () => {
-  const [date, setDate] = useState('');
-  const [startTime, setStartTime] = useState('00:00');
-  const [endTime, setEndTime] = useState('00:00');
-  const [breakTime, setBreakTime] = useState('00:00');
+  const { user } = useContext(AuthContext);
+  const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
-    try {
-      await axios.post(
-        'http://localhost:5000/timesheet/create',
-        { date, startTime, endTime, breakTime },
-        {
+  const formik = useFormik({
+    initialValues: {
+      date: '',
+      startTime: '',
+      endTime: '',
+      breakTime: '',
+    },
+    validationSchema: Yup.object({
+      date: Yup.date().required('Date is required'),
+      startTime: Yup.string().required('Start time is required'),
+      endTime: Yup.string().required('End time is required'),
+      breakTime: Yup.number()
+        .min(0, 'Break time cannot be negative')
+        .required('Break time is required'),
+    }),
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.post(`${API_URL}/timesheet/create`, values, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
-      );
-      navigate('/timesheet-table');
-      setDate('');
-      setStartTime('');
-      setEndTime('');
-      setBreakTime('');
-    } catch (err) {
-      console.error('Error:', err);
-    }
-  };
+        });
+        enqueueSnackbar('Timesheet submitted successfully', {
+          variant: 'success',
+        });
+        resetForm();
+        navigate('/timesheet-table');
+      } catch (err) {
+        enqueueSnackbar(
+          err.response?.data?.message || 'Failed to submit timesheet',
+          { variant: 'error' }
+        );
+      }
+    },
+  });
+
+  if (!user) {
+    return null;
+  }
 
   return (
-    <FormContainer>
-      <Form onSubmit={handleSubmit}>
-        <h2>Submit Timesheet</h2>
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-        <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
-        <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required />
-        <Input type="time" value={breakTime} onChange={(e) => setBreakTime(e.target.value)} required />
-        <Button type="submit">Submit</Button>
-      </Form>
-    </FormContainer>
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
+      <Paper elevation={3} sx={{ padding: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Submit Timesheet
+        </Typography>
+        <Box component="form" onSubmit={formik.handleSubmit}>
+          <TextField
+            label="Date"
+            type="date"
+            name="date"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            {...formik.getFieldProps('date')}
+            error={formik.touched.date && Boolean(formik.errors.date)}
+            helperText={formik.touched.date && formik.errors.date}
+          />
+          <TextField
+            label="Start Time"
+            type="time"
+            name="startTime"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            {...formik.getFieldProps('startTime')}
+            error={formik.touched.startTime && Boolean(formik.errors.startTime)}
+            helperText={formik.touched.startTime && formik.errors.startTime}
+          />
+          <TextField
+            label="End Time"
+            type="time"
+            name="endTime"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            {...formik.getFieldProps('endTime')}
+            error={formik.touched.endTime && Boolean(formik.errors.endTime)}
+            helperText={formik.touched.endTime && formik.errors.endTime}
+          />
+          <TextField
+            label="Break Time (in minutes)"
+            name="breakTime"
+            type="number"
+            fullWidth
+            margin="normal"
+            InputLabelProps={{ shrink: true }}
+            {...formik.getFieldProps('breakTime')}
+            error={formik.touched.breakTime && Boolean(formik.errors.breakTime)}
+            helperText={formik.touched.breakTime && formik.errors.breakTime}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            Submit
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 
 export default Timesheet;
-
-
-
-
-
-
-
-
-
-

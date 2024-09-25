@@ -1,53 +1,76 @@
+// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './components/Login';
-import Register from './components/Register';
+import { AuthProvider } from './components/AuthContext';
+import Sidebar from './components/Sidebar';
 import Timesheet from './components/Timesheet';
 import TimesheetTable from './components/TimesheetTable';
-import AdminDashboard from './components/AdminDashboard';
-import Sidebar from './components/Sidebar'; // Use Sidebar instead of Navbar
-import GlobalStyle from './components/GlobalStyles';
+import LeaveApplication from './components/LeaveApplication';
+import LeaveApplicationsList from './components/LeaveApplicationsList';
+import Login from './components/Login';
+import Register from './components/Register';
+import UserProfile from './components/UserProfile';
+import { SnackbarProvider } from 'notistack';
+import ThemeContextProvider from './ThemeContext';
 import PrivateRoute from './components/PrivateRoute';
-import AdminRoute from './components/AdminRoute';
-import styled from 'styled-components';
 
-// Adjust the main content to account for the sidebar width
-const MainContent = styled.div`
-  padding: 20px;
-  background-color: #f5f5f5;
-  min-height: 100vh;
-`;
-
-const App = () => {
+function App() {
   return (
-    <Router>
-      <GlobalStyle />
-      <Sidebar /> {/* Sidebar replaces Navbar */}
-      <MainContent>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route
-            path="/timesheet"
-            element={
-              <PrivateRoute>
-                <Timesheet />
-              </PrivateRoute>
-            }
-          />
-          <Route path="/timesheet-table" element={<TimesheetTable />} />
-          <Route
-            path="/admin-dashboard"
-            element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            }
-          />
-        </Routes>
-      </MainContent>
-    </Router>
+    <AuthProvider>
+      <ThemeContextProvider>
+        <SnackbarProvider>
+          <Router>
+            <Sidebar />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/timesheet"
+                element={
+                  <PrivateRoute>
+                    <Timesheet />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/timesheet-table"
+                element={
+                  <PrivateRoute>
+                    <TimesheetTable />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/leave-application"
+                element={
+                  <PrivateRoute>
+                    <LeaveApplication />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/my-leave-applications"
+                element={
+                  <PrivateRoute>
+                    <LeaveApplicationsList />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute>
+                    <UserProfile />
+                  </PrivateRoute>
+                }
+              />
+              {/* Add other routes as needed */}
+            </Routes>
+          </Router>
+        </SnackbarProvider>
+      </ThemeContextProvider>
+    </AuthProvider>
   );
-};
+}
 
 export default App;
