@@ -1,52 +1,40 @@
-// src/components/AuthContext.js
 import React, { createContext, useState, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode'; // Ensure jwtDecode is imported
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Load user from localStorage on initial render
   useEffect(() => {
     const token = localStorage.getItem('token');
-    console.log('Retrieved token from localStorage:', token); // Debugging line
-    if (token && typeof token === 'string') {
+    if (token) {
       try {
         const decoded = jwtDecode(token);
-        // Check token expiration
         const currentTime = Date.now() / 1000;
+
+        // Check if token is expired
         if (decoded.exp < currentTime) {
-          // Token expired
           console.warn('Token has expired.');
           localStorage.removeItem('token');
           setUser(null);
         } else {
+          // Store the user (including role) in the state
           setUser(decoded.user);
-          console.log('User set from decoded token:', decoded.user); // Debugging line
         }
       } catch (err) {
         console.error('Error decoding token:', err.message);
         localStorage.removeItem('token');
         setUser(null);
       }
-    } else {
-      console.warn('No token found or token is not a string.');
     }
   }, []);
 
   const login = (token) => {
-    console.log('Logging in with token:', token); // Debugging line
-    if (typeof token !== 'string') {
-      console.error('Login failed: Token must be a string');
-      return;
-    }
-
     localStorage.setItem('token', token);
     try {
       const decoded = jwtDecode(token);
-      setUser(decoded.user);
-      console.log('User set from decoded token:', decoded.user); // Debugging line
+      setUser(decoded.user); // Ensure the user object includes the role
     } catch (err) {
       console.error('Error decoding token during login:', err.message);
       setUser(null);
@@ -54,7 +42,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    console.log('Logging out. Removing token from localStorage.'); // Debugging line
     localStorage.removeItem('token');
     setUser(null);
   };

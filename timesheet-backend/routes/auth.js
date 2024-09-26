@@ -1,4 +1,3 @@
-// routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -17,6 +16,7 @@ router.post(
     check('name', 'Name is required').trim().not().isEmpty(),
     check('email', 'Please include a valid email').trim().isEmail(),
     check('password', 'Password must be at least 6 characters').trim().isLength({ min: 6 }),
+    check('role', 'Role must be either user or admin').trim().isIn(['user', 'admin']), // Role validation
   ],
   async (req, res) => {
     // Validation
@@ -26,7 +26,7 @@ router.post(
     }
 
     // Extract data
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body; // Include role
 
     try {
       // Check if user exists
@@ -35,8 +35,8 @@ router.post(
         return res.status(400).json({ errors: [{ msg: 'User already exists' }] });
       }
 
-      // Create user
-      user = new User({ name, email, password });
+      // Create user with role
+      user = new User({ name, email, password, role });
 
       // Hash password
       const salt = await bcrypt.genSalt(10);
@@ -46,7 +46,7 @@ router.post(
       await user.save();
 
       // Payload for JWT
-      const payload = { user: { id: user.id } };
+      const payload = { user: { id: user.id, role: user.role } }; // Include role in JWT payload
 
       // Sign JWT
       jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
@@ -91,7 +91,7 @@ router.post(
       }
 
       // Payload for JWT
-      const payload = { user: { id: user.id } };
+      const payload = { user: { id: user.id, role: user.role } }; // Include role in JWT payload
 
       // Sign JWT
       jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' }, (err, token) => {

@@ -1,5 +1,4 @@
-// src/components/Register.js
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   Container,
   TextField,
@@ -7,6 +6,8 @@ import {
   Typography,
   Paper,
   Box,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -21,6 +22,7 @@ const Register = () => {
   const { login } = useContext(AuthContext);
   const { enqueueSnackbar } = useSnackbar();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false); // To track role selection
 
   const formik = useFormik({
     initialValues: {
@@ -44,17 +46,17 @@ const Register = () => {
     onSubmit: async (values, { resetForm }) => {
       try {
         const { name, email, password } = values;
+        const role = isAdmin ? 'admin' : 'user'; // Determine role based on checkbox
+
         const res = await axios.post(
           `${API_URL}/auth/register`,
-          { name, email, password },
+          { name, email, password, role }, // Send role to the backend
           {
             headers: {
               'Content-Type': 'application/json',
             },
           }
         );
-
-        console.log('Register Response:', res.data); // Debugging line
 
         // Check if res.data.token exists and is a string
         if (res.data && typeof res.data.token === 'string') {
@@ -130,6 +132,17 @@ const Register = () => {
             helperText={
               formik.touched.confirmPassword && formik.errors.confirmPassword
             }
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Register as Admin"
+            sx={{ mt: 2 }}
           />
           <Button
             type="submit"

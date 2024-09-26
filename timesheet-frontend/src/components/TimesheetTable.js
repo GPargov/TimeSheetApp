@@ -31,6 +31,7 @@ const TimesheetTable = () => {
       const fetchTimesheets = async () => {
         try {
           const token = localStorage.getItem('token');
+          console.log('Token from localStorage:', token);
 
           if (!token || typeof token !== 'string') {
             throw new Error('Invalid or missing token');
@@ -122,7 +123,7 @@ const TimesheetTable = () => {
                       timesheet.endTime,
                       timesheet.breakTime
                     )}
-                  </TableCell> {/* Calculated Work Time */}
+                  </TableCell>
                 </TableRow>
               ))}
               {timesheets.length === 0 && (

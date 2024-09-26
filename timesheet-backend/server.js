@@ -17,10 +17,11 @@ app.use('/auth', require('./routes/auth')); // Authentication routes
 app.use('/users', require('./routes/users')); // User routes
 app.use('/timesheet', require('./routes/timesheet')); // Timesheet routes
 app.use('/leave', require('./routes/leave')); // Leave routes
+app.use('/admin', require('./routes/admin')); // Admin routes
 // Add other routes as needed
 
 // Default Route
-app.get('/', (req, res) => res.send('API Running'));
+app.get('/login', (req, res) => res.send('API Running'));
 
 // Start Server
 const PORT = process.env.PORT || 5000;
